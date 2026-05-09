@@ -126,6 +126,54 @@ if [[ -n "$UNCHECKED_APPS" ]]; then
     done
 fi
 
+echo -e '\e[3;36m[+] Starting multimodule cleanup process\e[0m'
+for config in "${CONFIG_FILES[@]}"; do
+    config_path="$SCRIPT_ROOT_DIR/$config"
+    if [ ! -f "$config_path" ]; then
+        echo -e "\e[1;31m[-] Config file $config not found, skipping\e[0m"
+        continue
+    fi
+
+    echo -e "\e[3;36m[#] Processing module: $config\e[0m"
+
+    grep -v '^#' "$config_path" | grep -v '^$' | while read -r line; do
+        DIR_TO_REMOVE=$(echo $line | awk '{print $1}')
+        DIR_TO_REMOVE_PATH="$ROOT_DIR/super/$DIR_TO_REMOVE"
+
+        if [ -d "$DIR_TO_REMOVE_PATH" ]; then
+            echo -e "  \e[3;36m[+] Removing: $DIR_TO_REMOVE\e[0m"
+            echo -e "      \e[1;34m[*] Deleting all permissions\e[0m"
+            APK_NAME=$(basename "$DIR_TO_REMOVE")
+            PACKAGE_NAME=$(aapt dump badging "$DIR_TO_REMOVE_PATH/$APK_NAME".apk | rg -e "package: name=\'([^\']+)" -or '$1')
+            ETC_PATH="$(dirname $(dirname "$DIR_TO_REMOVE_PATH"))/etc"
+            SYSCONFIG_PERMISSIONS_FILE=$(grep -rl "\"$PACKAGE_NAME\"" "$ETC_PATH/permissions" | head -n 1)
+            if [[ -n "$SYSCONFIG_PERMISSIONS_FILE" ]]; then
+                echo -e "          \e[1;32m[+] Removing: $SYSCONFIG_PERMISSIONS_FILE\e[0m"
+                rm -rf "$SYSCONFIG_PERMISSIONS_FILE"
+            else
+                echo -e "          \e[1;31m[-] No XML file found in $ETC_PATH/permissions\e[0m"
+            fi
+            PERMISSIONS_FILE=$(grep -rl "\"$PACKAGE_NAME\"" "$ETC_PATH/permissions" | head -n 1)
+            if [[ -n "$PERMISSIONS_FILE" ]]; then
+                echo -e "          \e[1;32m[+] Removing: $PERMISSIONS_FILE\e[0m"
+                rm -rf "$PERMISSIONS_FILE"
+            else
+                echo -e "          \e[1;31m[-] No XML file found in $ETC_PATH/permissions\e[0m"
+            fi
+            DEFAULT_PERMISSIONS_FILE=$(grep -rl "\"$PACKAGE_NAME\"" "$ETC_PATH/default-permissions" | head -n 1)
+            if [[ -n "$DEFAULT_PERMISSIONS_FILE" ]]; then
+                echo -e "          \e[1;32m[+] Removing: $DEFAULT_PERMISSIONS_FILE\e[0m"
+                rm -rf "$DEFAULT_PERMISSIONS_FILE"
+            else
+                echo -e "          \e[1;31m[-] No XML file found in $ETC_PATH/default-permissions\e[0m"
+            fi
+            rm -rf "$DIR_TO_REMOVE_PATH"
+        else
+            echo -e "  \e[1;31m[?] Not found: $DIR_TO_REMOVE\e[0m"
+        fi
+    done
+done
+
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
 
