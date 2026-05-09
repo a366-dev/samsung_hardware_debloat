@@ -237,6 +237,7 @@ for image in $ALL_IMAGES; do
 done
 
 echo -e '\e[3;36m[+] Processing lpmake command\e[0m'
+mkdir $ROOT_DIR/tmp
 eval "$LPMAKE_CMD" &> /dev/null
 if [[ $? != 0 ]]; then
     echo -e '\e[1;31m[-] Failed to pack the archive\e[0m'

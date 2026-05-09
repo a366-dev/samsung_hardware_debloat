@@ -20,7 +20,7 @@ METADATA_SIZE=$(echo "$DATA" | rg -e "Metadata max size: (\d*)" -or '$1')
 METADATA_SLOTS=$(echo "$DATA" | rg -e "Metadata slot count: (\d*)" -or '$1')
 DEVICE_SIZE=$(echo "$DATA" | grep -A 50 "Block device table:" | grep -m 1 "Size:" | awk {'print $2'})
 
-COMMAND="$COMMAND --metadata-size $METADATA_SIZE --metadata-slots $METADATA_SLOTS --super-name super --device super:$DEVICE_SIZE "
+COMMAND="TMPDIR=$SUPER_ROOT/tmp $COMMAND --metadata-size $METADATA_SIZE --metadata-slots $METADATA_SLOTS --super-name super --device super:$DEVICE_SIZE "
 
 while read -r line; do
     if [[ $line =~ Name:\ (.*) ]]; then
