@@ -216,6 +216,14 @@ mv "$MICROG_DIR/FakeStore.apk" "$ROOT_DIR/super/product/priv-app/FakeStore"
 echo -e "   \e[3;36m[*] Adding XMLs\e[0m"
 mv "$MICROG_DIR/perms/"* "$ROOT_DIR/super/product/etc/permissions"
 
+echo -e "\e[3;36m[+] Packing FW back\e[0m"
+echo -e "   \e[3;36m[*] Packing product.img\e[0m"
+mkfs.erofs -zlz4hc "$ROOT_DIR/super/product_a.img" "$ROOT_DIR/super/product" --all-root &> /dev/null
+echo -e "   \e[3;36m[*] Packing system.img\e[0m"
+mkfs.erofs -zlz4hc "$ROOT_DIR/super/system_a.img" "$ROOT_DIR/super/system" --all-root &> /dev/null
+echo -e "   \e[3;36m[*] Packing system_ext.img\e[0m"
+mkfs.erofs -zlz4hc "$ROOT_DIR/super/system_ext_a.img" "$ROOT_DIR/super/system_ext" --all-root &> /dev/null
+
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
 
