@@ -20,7 +20,7 @@ MICROG_DIR=$ROOT_DIR/microG
 
 CONFIG_FILES=('samsung_list.conf' 'google_list.conf')
 
-REQUIRED_COMMANDS=('rg' 'java' 'tar' 'lz4' 'simg2img' 'lpunpack' 'fsck.erofs' 'aapt')
+REQUIRED_COMMANDS=('rg' 'java' 'tar' 'lz4' 'simg2img' 'lpunpack' 'fsck.erofs' 'aapt' 'find')
 
 for cmd in "${REQUIRED_COMMANDS}"; do
     if ! command -v "${cmd}" &> /dev/null; then
@@ -86,6 +86,44 @@ fsck.erofs --extract="$ROOT_DIR/super/sytem_ext" "$ROOT_DIR/super/system_ext_a.i
 if [[ $? != 0 ]]; then
     echo -e '\e[1;31m[-] Failed to extract the archive\e[0m'
     exit 1
+fi
+
+echo -e '\e[3;36m[+] Scanning for unchecked applications\e[0m'
+
+cd "$ROOT_DIR/super"
+find product system/system system_ext -maxdepth 2 -path "*/app/*" -o -path "*/priv-app/*" -type d | sort > all.apps
+
+UNCHECKED_APPS=$(comm -23 all.apps "$SCRIPT_ROOT_DIR/checked.apps")
+
+cd $PARENT_WORKING_DIRECTORY
+
+if [[ -n "$UNCHECKED_APPS" ]]; then
+    for app in $UNCHECKED_APPS; do
+        echo -e "\n\e[31m[!] WARNING: New unverified app detected:\e[0m"
+        echo -e "----------------------------------------"
+        echo -e "\e[1;32m$app\e[0m"
+        echo -e "----------------------------------------"
+        echo -e "Action: (d)elete, (k)eep, (w)hat are u want, keep it and dont ask me again, or (s)kip and decide manually? [d/k/s]"
+        read -sn 1 action
+
+        case $action in
+            d)
+                echo "[+] Deleting $app\e[0m"
+                rm -rf "$ROOT_DIR/super/$app"
+                ;;
+            k)
+                echo "[+] Whitelising $app\e[0m"
+                echo "$app" >> "$SCRIPT_ROOT_DIR/checked.apps"
+                sort -u -o "$SCRIPT_ROOT_DIR/checked.apps" "$SCRIPT_ROOT_DIR/checked.apps"
+                ;;
+            w)
+                break
+                ;;
+            s)
+                echo "\e[3;36m[+] Understood. Exiting\e[0m"
+                exit 0
+        esac
+    done
 fi
 
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
