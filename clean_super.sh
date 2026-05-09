@@ -44,8 +44,18 @@ if [[ $? != 0 ]]; then
     echo -e '\e[1;31m[-] Failed to extract the archive\e[0m'
     exit 1
 fi
+
 echo -e '\e[3;36m[+] Deleting super.img.lz4 as unneeded\e[0m'
 rm "$ROOT_DIR/super.img.lz4"
+
+echo -e '\e[3;36m[+] Extracting super.raw\e[0m'
+simg2img "$ROOT_DIR/super.img" "$ROOT_DIR/super.raw" &> /dev/null
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to extract the archive\e[0m'
+    exit 1
+fi
+echo -e '\e[3;36m[+] Deleting super.img as unneeded\e[0m'
+rm "$ROOT_DIR/super.img"
 
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
