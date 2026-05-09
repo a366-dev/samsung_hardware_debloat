@@ -29,6 +29,15 @@ for cmd in "${REQUIRED_COMMANDS}"; do
     fi
 done
 
+mkdir "$ROOT_DIR"
+
+echo -e '\e[3;36m[+] Extracting super.img.lz4 from AP\e[0m'
+tar -xf "$AP" -C "$ROOT_DIR" super.img.lz4 &> /dev/null
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to extract the archive. Are u sure that is the correct path?\e[0m'
+    exit 1
+fi
+
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
 
