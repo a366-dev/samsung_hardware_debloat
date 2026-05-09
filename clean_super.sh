@@ -65,6 +65,29 @@ if [[ $? != 0 ]]; then
     exit 1
 fi
 
+mkdir "$ROOT_DIR/super/product" "$ROOT_DIR/super/system" "$ROOT_DIR/super/system_ext"
+
+echo -e '\e[3;36m[+] Extracting product_a.img\e[0m'
+fsck.erofs --extract="$ROOT_DIR/super/product" "$ROOT_DIR/super/product_a.img" &> /dev/null
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to extract the archive\e[0m'
+    exit 1
+fi
+
+echo -e '\e[3;36m[+] Extracting system_a.img\e[0m'
+fsck.erofs --extract="$ROOT_DIR/super/system" "$ROOT_DIR/super/system_a.img" &> /dev/null
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to extract the archive\e[0m'
+    exit 1
+fi
+
+echo -e '\e[3;36m[+] Extracting system_ext_a.img\e[0m'
+fsck.erofs --extract="$ROOT_DIR/super/sytem_ext" "$ROOT_DIR/super/system_ext_a.img" &> /dev/null
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to extract the archive\e[0m'
+    exit 1
+fi
+
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
 
