@@ -31,6 +31,38 @@ done
 
 mkdir "$ROOT_DIR"
 
+echo -e '\e[3;36m[+] Downloading latest microG\e[0m'
+mkdir "$MICROG_DIR"
+
+curl -L -H "Accept: application/vnd.github+json" https://api.github.com/repos/microg/GmsCore/releases/latest > "$MICROG_DIR/GmsCore.json"
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to get latest release\e[0m'
+    exit 1
+fi
+
+curl -L $(cat "$MICROG_DIR/GmsCore.json" | rg -e "\"(https://.*com.google.android.gms-[^-]*-hw.apk)\"" -or '$1') -o "$MICROG_DIR/GmsCore.apk"
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to download GmsCore.apk\e[0m'
+    exit 1
+fi
+
+curl -L $(cat "$MICROG_DIR/GmsCore.json" | rg -e "\"(https://.*com.android.vending-[^-]*-hw.apk)\"" -or '$1') -o "$MICROG_DIR/FakeStore.apk"
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to download FakeStore.apk\e[0m'
+    exit 1
+fi
+
+echo -e '\e[3;36m[+] Generating ROM permissions\e[0m'
+bash "$SCRIPT_ROOT_DIR/dl-perm-list.sh" &> /dev/null
+
+echo -e '\e[3;36m[+] Generating XML files\e[0m'
+echo -e '   \e[3;36m[*] Generating GmsCore.apk XMLs\e[0m'
+bash "$SCRIPT_ROOT_DIR/generate-perm-xml.sh" "$MICROG_DIR/GmsCore.apk" &> /dev/null
+echo -e '   \e[3;36m[*] Generating FakeStore.apk XMLs\e[0m'
+bash "$SCRIPT_ROOT_DIR/generate-perm-xml.sh" "$MICROG_DIR/FakeStore.apk" &> /dev/null
+mv "$PARENT_WORKING_DIRECTORY/output" "$MICROG_DIR/perms"
+rm -rf "$SCRIPT_ROOT_DIR/data"
+
 echo -e '\e[3;36m[+] Extracting super.img.lz4 from AP\e[0m'
 tar -xf "$AP" -C "$ROOT_DIR" super.img.lz4 &> /dev/null
 if [[ $? != 0 ]]; then
@@ -173,6 +205,16 @@ for config in "${CONFIG_FILES[@]}"; do
         fi
     done
 done
+
+echo -e "\e[3;36m[+] Adding microG\e[0m"
+echo -e "   \e[3;36m[*] Adding GmsCore\e[0m"
+mkdir "$ROOT_DIR/super/product/priv-app/GmsCore"
+mv "$MICROG_DIR/GmsCore.apk" "$ROOT_DIR/super/product/priv-app/GmsCore"
+echo -e "   \e[3;36m[*] Adding FakeStore\e[0m"
+mkdir "$ROOT_DIR/super/product/priv-app/FakeStore"
+mv "$MICROG_DIR/FakeStore.apk" "$ROOT_DIR/super/product/priv-app/FakeStore"
+echo -e "   \e[3;36m[*] Adding XMLs\e[0m"
+mv "$MICROG_DIR/perms/"* "$ROOT_DIR/super/product/etc/permissions"
 
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
