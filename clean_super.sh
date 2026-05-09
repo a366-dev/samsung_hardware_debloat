@@ -224,6 +224,28 @@ mkfs.erofs -zlz4hc "$ROOT_DIR/super/system_a.img" "$ROOT_DIR/super/system" --all
 echo -e "   \e[3;36m[*] Packing system_ext.img\e[0m"
 mkfs.erofs -zlz4hc "$ROOT_DIR/super/system_ext_a.img" "$ROOT_DIR/super/system_ext" --all-root &> /dev/null
 
+echo -e '\e[3;36m[+] Generating lpmake command\e[0m'
+LPMAKE_CMD="$(bash "$SCRIPT_ROOT_DIR/gen_lpmake.sh" "$ROOT_DIR")"
+
+echo -e "\e[3;36m[+] Converting all A images to sparse format\e[0m"
+ALL_IMAGES=$(find "$ROOT_DIR/super" -maxdepth 1 -name "*_a.img")
+
+for image in $ALL_IMAGES; do
+    echo -e "  \e[3;36m[*] $(basename "$image")\e[0m"
+    img2simg "$image" "${image}_simg"
+    mv "${image}_simg" "$image"
+done
+
+echo -e '\e[3;36m[+] Processing lpmake command\e[0m'
+eval "$LPMAKE_CMD" &> /dev/null
+if [[ $? != 0 ]]; then
+    echo -e '\e[1;31m[-] Failed to pack the archive\e[0m'
+    exit 1
+fi
+
+echo -e '\e[3;36m[+] Moving super.img to your current directory\e[0m'
+mv "$ROOT_DIR/super.img" "$PARENT_WORKING_DIRECTORY"
+
 echo -e "\e[3;36m[+] Removing working directory\e[0m"
 rm -rf "$ROOT_DIR"
 
